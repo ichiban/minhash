@@ -1,0 +1,53 @@
+#!/usr/bin/env ruby
+require 'thor'
+require 'ffi-rzmq'
+
+class MinhashClient < Thor
+  def initialize(args=[], options={}, config={})
+    super args, options, config
+    @ctx = ZMQ::Context.new(1)
+    @socket = @ctx.socket(ZMQ::REQ)
+    @socket.connect('tcp://localhost:5555')
+  end
+
+  desc 'add ID FEATURE', 'add feature to instance'
+  def add(id, feature)
+    @socket.send_string 'ADD', ZMQ::SNDMORE
+    @socket.send_string id, ZMQ::SNDMORE
+    @socket.send_string feature
+    msg = ''
+    @socket.recv_string msg
+    puts msg
+  end
+
+  desc 'del ID FEATURE', 'remove feature from instance'
+  def del(id, feature)
+    @socket.send_string 'DEL', ZMQ::SNDMORE
+    @socket.send_string id, ZMQ::SNDMORE
+    @socket.send_string feature
+    msg = ''
+    @socket.recv_string msg
+    puts msg
+  end
+
+  desc 'get ID', 'retrieve features from instance'
+  def get(id)
+    @socket.send_string 'GET', ZMQ::SNDMORE
+    @socket.send_string id
+    msg = []
+    @socket.recv_strings msg
+    puts msg
+  end
+
+  desc 'find ID RESEMBLANCE', 'find similar instances'
+  def find(id, resemblance)
+    @socket.send_string 'FIND', ZMQ::SNDMORE
+    @socket.send_string id, ZMQ::SNDMORE
+    @socket.send_string resemblance
+    msg = []
+    @socket.recv_strings msg
+    puts msg
+  end
+end
+
+MinhashClient.start
